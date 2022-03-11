@@ -81,7 +81,7 @@
             this.Controls.Add(this.label1);
             this.Controls.Add(this.listBox1);
             this.Name = "Form1";
-            this.Text = "Form1";
+            this.Text = "HLK Report Generate";
             this.ResumeLayout(false);
             this.PerformLayout();
 

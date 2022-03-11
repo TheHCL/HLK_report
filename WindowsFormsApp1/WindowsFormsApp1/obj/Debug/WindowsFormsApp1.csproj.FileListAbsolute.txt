@@ -39,3 +39,7 @@ C:\Users\Administrator\Desktop\vs\report\WindowsFormsApp1\WindowsFormsApp1\bin\D
 C:\Users\Administrator\Desktop\vs\report\WindowsFormsApp1\WindowsFormsApp1\bin\Debug\NPOI.OOXML.xml
 C:\Users\Administrator\Desktop\vs\report\WindowsFormsApp1\WindowsFormsApp1\bin\Debug\NPOI.OpenXml4Net.pdb
 C:\Users\Administrator\Desktop\vs\report\WindowsFormsApp1\WindowsFormsApp1\bin\Debug\NPOI.OpenXmlFormats.pdb
+C:\Users\Administrator\Desktop\vs\report\WindowsFormsApp1\WindowsFormsApp1\bin\Debug\WindowsFormsApp1.exe.manifest
+C:\Users\Administrator\Desktop\vs\report\WindowsFormsApp1\WindowsFormsApp1\bin\Debug\WindowsFormsApp1.application
+C:\Users\Administrator\Desktop\vs\report\WindowsFormsApp1\WindowsFormsApp1\obj\Debug\WindowsFormsApp1.exe.manifest
+C:\Users\Administrator\Desktop\vs\report\WindowsFormsApp1\WindowsFormsApp1\obj\Debug\WindowsFormsApp1.application

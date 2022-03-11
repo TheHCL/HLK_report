@@ -15,6 +15,7 @@ using NPOI.XSSF.UserModel;
 using NPOI.SS.UserModel;
 using System.IO;
 using NPOI.XSSF.Util;
+using NPOI.Util;
 
 namespace WindowsFormsApp1
 {
@@ -37,7 +38,101 @@ namespace WindowsFormsApp1
             ProjectManager manager = ConnectToController();
             Project proj = manager.GetProject(pro_name);
             IEnumerable<Test> tests = proj.GetTests().OrderBy(f => f.Name);
+            
             return tests;
+        }
+
+        public static IEnumerable<IFilter> my_fil(String pro_name)
+        {
+            ProjectManager manager = ConnectToController();
+            Project project = manager.GetProject(pro_name);
+            IEnumerable<IFilter> filt_lis = project.GetAppliedFilters();
+
+            return filt_lis;
+        }
+
+        public static List<int> item_count(IEnumerable<Test> t)
+        {
+            int count_pass = 0;
+            int count_fail = 0;
+            int count_not = 0;
+            int count_total = 0;
+            List<int> list = new List<int>();
+            foreach (Test test in t)
+            {
+                // here we can get test results list (Name)(Status)(AreFiltersApplied)
+
+                if (test.Status.ToString() == "Passed")
+                {
+                    count_pass += 1;
+
+
+                }
+                else if (test.Status.ToString() == "Failed")
+                {
+                    count_fail += 1;
+
+
+                }
+                else
+                {
+                    count_not += 1;
+                }
+
+                
+            }
+            count_total = count_pass + count_not + count_fail;
+            list.Add(count_pass);
+            list.Add(count_fail);
+            list.Add(count_not);
+            list.Add(count_total);
+
+            return list;
+        }
+
+        public static List<String> get_filter(Test tname)
+        {
+            List<String> filt_all=new List<String>();
+            IEnumerable<TestResult> b = tname.GetTestResults();
+            foreach (TestResult t in b)
+            {
+                IEnumerable<IFilter> q = t.GetAppliedFilters();
+                foreach (IFilter f in q)
+                {
+                    if (!filt_all.Contains(f.FilterNumber.ToString()))
+                    {
+                        filt_all.Add(f.FilterNumber.ToString());
+                        filt_all.Add(f.IssueDescription);
+                        filt_all.Add(f.ExpirationDate.ToString());
+                        filt_all.Add(tname.Name);
+                    }
+                    
+                    
+                }
+
+            }
+            return filt_all;
+        }
+        private static int PixelstoEmus(int pixels) => pixels * Units.EMU_PER_PIXEL;
+        public static void Add_Comment(ISheet st,int row, int cell,String s) 
+        {
+            var patr = st.CreateDrawingPatriarch();
+            var anchor = new XSSFClientAnchor
+            {
+                Col1 = 5,
+                Row1 = 5,
+                Col2 = 8,
+                Row2 = 7,
+
+                Dx1 = PixelstoEmus(10),
+                Dy1 = PixelstoEmus(10),
+                Dx2 = PixelstoEmus(30),
+                Dy2 = PixelstoEmus(10),
+            };
+
+            var comment = patr.CreateCellComment(anchor);
+            comment.String = new XSSFRichTextString(s);
+            st.GetRow(row).GetCell(cell).CellComment = comment;
         }
 
         public static XSSFCellStyle def_style(IWorkbook workbook,int type)
@@ -99,6 +194,7 @@ namespace WindowsFormsApp1
            
 
             InitializeComponent();
+            
             label1.Visible=false;
             label2.Visible=false;
             button1.Visible=false;
@@ -121,31 +217,15 @@ namespace WindowsFormsApp1
             string text = listBox1.GetItemText(listBox1.SelectedItem); //Get the selected project name
            
             IEnumerable<Test> my_res = Test_list(text);
-            int count_pass = 0;
-            int count_fail = 0;
-            int count_not = 0;
-            int count_total = 0;
+            List<int> nums = item_count(my_res);
+            int count_pass = nums[0];
+            int count_fail = nums[1];
+            int count_not = nums[2];
+            int count_total = nums[3];
             string numbers_title;
             string numbers;
-            foreach (Test test in my_res)
-            {
-                // here we can get test results list (Name)(Status)(AreFiltersApplied)
-                
-                if (test.Status.ToString() == "Passed")
-                {
-                    count_pass += 1;
-                }
-                else if (test.Status.ToString() == "Failed")
-                {
-                    count_fail += 1;
-                }
-                else
-                {
-                    count_not += 1;
-                }
-                
-            }
-            count_total = count_pass+count_fail+count_not;
+            
+            
             numbers_title = String.Format("{0,-7}", "Pass")+"\n";
             numbers = String.Format("{0,3}", count_pass.ToString()) + "\n";
             numbers_title += String.Format("{0,-9}", "Fail") + "\n";
@@ -157,6 +237,7 @@ namespace WindowsFormsApp1
             label1.Text = numbers_title;
             label2.Text = numbers;
 
+            
 
         }
 
@@ -176,33 +257,52 @@ namespace WindowsFormsApp1
                 XSSFCellStyle cs_pass = def_style(workbook,0);
                 XSSFCellStyle cs_fail = def_style(workbook,1);
                 XSSFCellStyle cs_not = def_style(workbook,2);
-                
-                
-                
-                
+
 
                 
-
-                
-
                 ISheet sheet = workbook.CreateSheet("Test Summary");
+                ISheet sheet2 = workbook.CreateSheet("Filter Summary");
+
+
+                //initialize sheet [Test Summary]
                 sheet.CreateRow(0);
-                sheet.GetRow(0).CreateCell(1).SetCellValue("Units");
-                sheet.GetRow(0).CreateCell(2).SetCellValue("my machine");
+                sheet.GetRow(0).CreateCell(1).SetCellValue("Project");
+                sheet.GetRow(0).CreateCell(2).SetCellValue(text);
                 sheet.CreateRow(1);
                 sheet.GetRow(1).CreateCell(0).SetCellValue("No.");
                 sheet.GetRow(1).CreateCell(1).SetCellValue("Test items");
                 sheet.GetRow(1).CreateCell(2).SetCellValue("Results");
                 sheet.GetRow(1).CreateCell(3).SetCellValue("Filter ID");
+
+                //initialize sheet [Filter SUmmary]
+                sheet2.CreateRow(0);
+                sheet2.GetRow(0).CreateCell(0).SetCellValue("Filter Number");
+                sheet2.GetRow(0).CreateCell(1).SetCellValue("Issue Description");
+                sheet2.GetRow(0).CreateCell(2).SetCellValue("Expiration Date");
+                sheet2.GetRow(0).CreateCell(3).SetCellValue("Test Name");
+
+                
+
+
+                
                 int my_row = 2;
                 int count = 1;
+                int my_row_sheet2 = 1;
+                int count_sheet2 = 1;
                 sheet.SetColumnWidth(1, (int)(59.22*256));
                 sheet.SetColumnWidth(2, (int)(19.22*256));
-                
-                IEnumerable<Test> t = Test_list(text);
 
+                sheet2.SetColumnWidth(0, (int)(10.67 * 256));
+                sheet2.SetColumnWidth(1, (int)(59.22 * 256));
+                sheet2.SetColumnWidth(2, (int)(21.44 * 256));
+                sheet2.SetColumnWidth(3, (int)(59.22 * 256));
+
+                IEnumerable<Test> t = Test_list(text);
+                List<int> nums = item_count(t);
+                List<String> filt_info = null;
                 foreach (Test a in t)
                 {
+                    
                     sheet.CreateRow(my_row);
                     sheet.GetRow(my_row).CreateCell(0).SetCellValue(count);
                     sheet.GetRow(my_row).GetCell(0).CellStyle = cs_test_name;
@@ -212,29 +312,126 @@ namespace WindowsFormsApp1
                     {
                         sheet.GetRow(my_row).CreateCell(2).SetCellValue(a.Status.ToString());
                         sheet.GetRow(my_row).GetCell(2).CellStyle = cs_pass;
+
+                        if (a.AreFiltersApplied == true)
+                        {
+                            
+                            filt_info = get_filter(a);
+                            string filter_ID = null;
+                            string my_com = null;
+                            for (int i = 0; i < filt_info.Count; i += 4)
+                            {
+                                filter_ID += "#" + filt_info[i] + "/";
+                                my_com += String.Format("Filter#{0} (Expiration Date:{1})\n{2}\n", filt_info[i], filt_info[i + 2], filt_info[i + 1]);
+                                Add_Comment(sheet, my_row, 2,my_com);
+                                sheet2.CreateRow(my_row_sheet2);
+                                sheet2.GetRow(my_row_sheet2).CreateCell(0).SetCellValue(filt_info[i]);
+                                sheet2.GetRow(my_row_sheet2).CreateCell(1).SetCellValue(filt_info[i+1]);
+                                sheet2.GetRow(my_row_sheet2).CreateCell(2).SetCellValue(filt_info[i+2]);
+                                sheet2.GetRow(my_row_sheet2).CreateCell(3).SetCellValue(filt_info[i+3]);
+                                my_row_sheet2++;
+                            }
+                            
+
+
+                            filter_ID = filter_ID.Remove(filter_ID.Length - 1, 1);
+                            sheet.GetRow(my_row).CreateCell(3).SetCellValue(filter_ID);
+                            sheet.GetRow(my_row).GetCell(3).CellStyle = cs_test_name;
+                        }
+                        else
+                        {
+                            sheet.GetRow(my_row).CreateCell(3);
+                            sheet.GetRow(my_row).GetCell(3).CellStyle = cs_test_name;
+                        }
                     }
                     else if (a.Status.ToString() == "Failed")
                     {
                         sheet.GetRow(my_row).CreateCell(2).SetCellValue(a.Status.ToString());
                         sheet.GetRow(my_row).GetCell(2).CellStyle = cs_fail;
+
+                        if (a.AreFiltersApplied == true)
+                        {
+                            filt_info = get_filter(a);
+                            string filter_ID = null;
+                            string my_com = null;
+                            for (int i = 0; i < filt_info.Count; i += 4)
+                            {
+                                filter_ID += "#" + filt_info[i] + "/";
+                                my_com += String.Format("Filter#{0} (Expiration Date:{1})\n{2}\n", filt_info[i], filt_info[i + 2], filt_info[i + 1]);
+                                Add_Comment(sheet, my_row, 2, my_com);
+                                sheet2.CreateRow(my_row_sheet2);
+                                sheet2.GetRow(my_row_sheet2).CreateCell(0).SetCellValue(filt_info[i]);
+                                sheet2.GetRow(my_row_sheet2).CreateCell(1).SetCellValue(filt_info[i + 1]);
+                                sheet2.GetRow(my_row_sheet2).CreateCell(2).SetCellValue(filt_info[i + 2]);
+                                sheet2.GetRow(my_row_sheet2).CreateCell(3).SetCellValue(filt_info[i + 3]);
+                                my_row_sheet2++;
+                            }
+
+
+                            filter_ID = filter_ID.Remove(filter_ID.Length - 1, 1);
+                            sheet.GetRow(my_row).CreateCell(3).SetCellValue(filter_ID);
+                            sheet.GetRow(my_row).GetCell(3).CellStyle = cs_test_name;
+                        }
+                        else
+                        {
+                            sheet.GetRow(my_row).CreateCell(3);
+                            sheet.GetRow(my_row).GetCell(3).CellStyle = cs_test_name;
+                        }
                     }
                     else 
                     {
                         sheet.GetRow(my_row).CreateCell(2).SetCellValue(a.Status.ToString());
                         sheet.GetRow(my_row).GetCell(2).CellStyle = cs_not;
+                        sheet.GetRow(my_row).CreateCell(3);
+                        sheet.GetRow(my_row).GetCell(3).CellStyle = cs_test_name;
                     }
 
-                    sheet.GetRow(my_row).CreateCell(3);
-                    sheet.GetRow(my_row).GetCell(3).CellStyle = cs_test_name;
+                    
                     my_row++;
                     count++;
+                    for (int k = 0; k < my_row_sheet2; k++)
+                    {
+                        for (int i = 0; i <= 3; i++)
+                        {
+                            sheet2.GetRow(k).GetCell(i).CellStyle = cs_test_name;
+                        }
+                    }
+                    
                 }
+
+                sheet.CreateRow(my_row);
+                sheet.GetRow(my_row).CreateCell(1).SetCellValue("Passed");
+                sheet.GetRow(my_row).CreateCell(2).SetCellValue(nums[0]);
+                my_row++;
+
+                sheet.CreateRow(my_row);
+                sheet.GetRow(my_row).CreateCell(1).SetCellValue("Failed");
+                sheet.GetRow(my_row).CreateCell(2).SetCellValue(nums[1]);
+                my_row++;
+
+                sheet.CreateRow(my_row);
+                sheet.GetRow(my_row).CreateCell(1).SetCellValue("Not Run");
+                sheet.GetRow(my_row).CreateCell(2).SetCellValue(nums[2]);
+                my_row++;
+
+                sheet.CreateRow(my_row);
+                sheet.GetRow(my_row).CreateCell(1).SetCellValue("Total");
+                sheet.GetRow(my_row).CreateCell(2).SetCellValue(nums[3]);
+                my_row++;
+
+                sheet.CreateRow(my_row);
+                sheet.GetRow(my_row).CreateCell(1).SetCellValue("Pass Rate");
                 
+                Decimal ww = Convert.ToDecimal(nums[1]/nums[3]);
+                sheet.GetRow(my_row).CreateCell(2).SetCellValue(System.Math.Round(ww,2,MidpointRounding.AwayFromZero)*100+"%");
+                
+
+
                 using (FileStream stream = new FileStream(save_diag.FileName, FileMode.Create, FileAccess.Write))
                 {
                     workbook.Write(stream);
                 }
-                MessageBox.Show("Done","Info");
+                MessageBox.Show(text+" Done","Info");
             
                
 
