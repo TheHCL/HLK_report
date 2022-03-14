@@ -421,9 +421,14 @@ namespace WindowsFormsApp1
 
                 sheet.CreateRow(my_row);
                 sheet.GetRow(my_row).CreateCell(1).SetCellValue("Pass Rate");
+
+                var wx = Convert.ToDouble(nums[1]) / Convert.ToDouble(nums[3]);
+                wx = wx * 100;
+                wx = System.Math.Round(wx, 2, MidpointRounding.AwayFromZero);
+                //Double ww = Convert.ToDouble((100*nums[1])/nums[3]);
+                Console.WriteLine(wx);
+                sheet.GetRow(my_row).CreateCell(2).SetCellValue(wx.ToString()+"%");
                 
-                Decimal ww = Convert.ToDecimal(nums[1]/nums[3]);
-                sheet.GetRow(my_row).CreateCell(2).SetCellValue(System.Math.Round(ww,2,MidpointRounding.AwayFromZero)*100+"%");
                 
 
 
